@@ -1,22 +1,22 @@
 public with sharing class EncryptionInfoService {
-
     public Boolean includeObjectsWithAssociatedEntities;
     public Boolean includeEncryptionScheme;
 
-    @TestVisible private Map<String, FieldInfo> fieldInfosMap;
+    @TestVisible
+    private Map<String, FieldInfo> fieldInfosMap;
 
     public EncryptionInfoService() {
         includeObjectsWithAssociatedEntities = false; // Exclude system level objects by default
-        includeEncryptionScheme = false; // Excluded by default because of increased cpu time 
+        includeEncryptionScheme = false; // Excluded by default because of increased cpu time
         clearFields();
     }
 
     // Get all encrypted fields
 
     public void retrieveAllFields() {
-
         for (Schema.SObjectType object_i : Schema.getGlobalDescribe().values()) {
-            if (!includeObjectsWithAssociatedEntities && String.isNotBlank(object_i.getDescribe().getAssociateEntityType())) continue;
+            if (!includeObjectsWithAssociatedEntities && String.isNotBlank(object_i.getDescribe().getAssociateEntityType()))
+                continue;
             for (Schema.SObjectField field_i : object_i.getDescribe().fields.getMap().values()) {
                 if (field_i.getDescribe().isEncrypted()) {
                     addField(object_i.getDescribe().getName(), field_i.getDescribe().getName(), true);
@@ -30,10 +30,10 @@ public with sharing class EncryptionInfoService {
     }
 
     public void retrieveObjectFields(String objectName) {
-
         Map<String, Schema.SObjectType> globalDescribes = Schema.getGlobalDescribe();
 
-        if (!globalDescribes.containsKey(objectName)) return;
+        if (!globalDescribes.containsKey(objectName))
+            return;
 
         for (Schema.SObjectField field_i : globalDescribes.get(objectName).getDescribe().fields.getMap().values()) {
             if (field_i.getDescribe().isEncrypted()) {
@@ -45,12 +45,12 @@ public with sharing class EncryptionInfoService {
             retrieveFieldsEncryptionScheme();
         }
     }
-    
+
     // Retrieve EncryptionScheme from Metadata API
     // Note: requires the MetadataService from FinancialForce (modified to include encryptionScheme)
 
-    @TestVisible private void retrieveFieldsEncryptionScheme() {
-
+    @TestVisible
+    private void retrieveFieldsEncryptionScheme() {
         MetadataService.MetadataPort service = new MetadataService.MetadataPort();
         service.SessionHeader = new MetadataService.SessionHeader_element();
         service.SessionHeader.sessionId = UserInfo.getSessionId();
@@ -63,7 +63,8 @@ public with sharing class EncryptionInfoService {
         for (FieldInfo fieldInfo : fieldInfosMap.values()) {
             batch.add(fieldInfo.fullName);
 
-            if (batch.size() == 10) { //MAX_BATCH_METADATA_SIZE
+            if (batch.size() == 10) {
+                //MAX_BATCH_METADATA_SIZE
                 mdInfo.addAll((List<MetadataService.CustomField>) service.readMetadata('CustomField', batch).getRecords());
                 batch.clear();
             }
@@ -95,10 +96,7 @@ public with sharing class EncryptionInfoService {
     }
 
     private void addField(String objectName, String fieldName, Boolean isEncrypted) {
-        fieldInfosMap.put(
-            objectName + '.' + fieldName,
-            new FieldInfo(objectName + '.' + fieldName, objectName, fieldName, isEncrypted)
-        );
+        fieldInfosMap.put(objectName + '.' + fieldName, new FieldInfo(objectName + '.' + fieldName, objectName, fieldName, isEncrypted));
     }
 
     private void updateFieldEncryptionScheme(String fullName, String encryptionScheme) {
@@ -109,28 +107,36 @@ public with sharing class EncryptionInfoService {
 
     // FieldInfo Class
 
-    @TestVisible 
+    @TestVisible
     class FieldInfo {
-        @TestVisible String fullName;
-        @TestVisible String objectName;
-        @TestVisible String fieldName;
-        @TestVisible Boolean isEncrypted;
-        @TestVisible String encryptionScheme;
+        @TestVisible
+        String fullName;
+        @TestVisible
+        String objectName;
+        @TestVisible
+        String fieldName;
+        @TestVisible
+        Boolean isEncrypted;
+        @TestVisible
+        String encryptionScheme;
 
-        @TestVisible FieldInfo() {
+        @TestVisible
+        FieldInfo() {
             this.fullName = '';
             this.objectName = '';
             this.fieldName = '';
             this.isEncrypted = false;
             this.encryptionScheme = '';
         }
-        @TestVisible FieldInfo(String fullName, String objectName, String fieldName) {
+        @TestVisible
+        FieldInfo(String fullName, String objectName, String fieldName) {
             this();
             this.fullName = fullName;
             this.objectName = objectName;
             this.fieldName = fieldName;
         }
-        @TestVisible FieldInfo(String fullName, String objectName, String fieldName, Boolean isEncrypted) {
+        @TestVisible
+        FieldInfo(String fullName, String objectName, String fieldName, Boolean isEncrypted) {
             this(fullName, objectName, fieldName);
             this.isEncrypted = isEncrypted;
         }
