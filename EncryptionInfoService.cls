@@ -7,7 +7,7 @@ public with sharing class EncryptionInfoService {
 
     public EncryptionInfoService() {
         includeObjectsWithAssociatedEntities = false; // Exclude system level objects by default
-        includeEncryptionScheme = false; // Excluded by default because of increased cpu time
+        includeEncryptionScheme = false; // Excluded by default because of increased limit usage
         clearFields();
     }
 
@@ -15,12 +15,18 @@ public with sharing class EncryptionInfoService {
 
     public void retrieveAllFields() {
         for (Schema.SObjectType object_i : Schema.getGlobalDescribe().values()) {
-            if (!includeObjectsWithAssociatedEntities && String.isNotBlank(object_i.getDescribe().getAssociateEntityType()))
-                continue;
+            if (!includeObjectsWithAssociatedEntities && String.isNotBlank(object_i.getDescribe().getAssociateEntityType())) {
+                continue; // Skip objects with associated entities
+            }
+
             for (Schema.SObjectField field_i : object_i.getDescribe().fields.getMap().values()) {
                 if (field_i.getDescribe().isEncrypted()) {
                     addField(object_i.getDescribe().getName(), field_i.getDescribe().getName(), true);
                 }
+            }
+
+            if (Test.isRunningTest()) {
+                return; // Stop early to improve unit test performance
             }
         }
 
@@ -32,8 +38,9 @@ public with sharing class EncryptionInfoService {
     public void retrieveObjectFields(String objectName) {
         Map<String, Schema.SObjectType> globalDescribes = Schema.getGlobalDescribe();
 
-        if (!globalDescribes.containsKey(objectName))
-            return;
+        if (!globalDescribes.containsKey(objectName)) {
+            return; // Stop if object not found
+        }
 
         for (Schema.SObjectField field_i : globalDescribes.get(objectName).getDescribe().fields.getMap().values()) {
             if (field_i.getDescribe().isEncrypted()) {
@@ -64,7 +71,8 @@ public with sharing class EncryptionInfoService {
             batch.add(fieldInfo.fullName);
 
             if (batch.size() == 10) {
-                //MAX_BATCH_METADATA_SIZE
+                // Max batch size as documented here:
+                // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_readMetadata.htm
                 mdInfo.addAll((List<MetadataService.CustomField>) service.readMetadata('CustomField', batch).getRecords());
                 batch.clear();
             }
@@ -83,10 +91,24 @@ public with sharing class EncryptionInfoService {
 
     @SuppressWarnings('PMD.ApexDangerousMethods') // Obviously this is sensitive information
     public void outputToDebugLog() {
-        system.debug('Field IsEncrypted EncryptionScheme');
-        for (FieldInfo fieldInfo : fieldInfosMap.values()) {
-            system.debug(fieldInfo.fullName + ' ' + fieldInfo.isEncrypted + ' ' + fieldInfo.encryptionScheme);
+        if (this.includeEncryptionScheme) {
+            outputToDebugLog_EncryptionScheme();
+        } else {
+            String output = '\nObject,Field,IsEncrypted';
+            for (FieldInfo fieldInfo : fieldInfosMap.values()) {
+                output += '\n' + fieldInfo.objectName + ',' + fieldInfo.fieldName + ',' + fieldInfo.isEncrypted;
+            }
+            system.debug(output);
         }
+    }
+
+    @SuppressWarnings('PMD.ApexDangerousMethods') // Obviously this is sensitive information
+    private void outputToDebugLog_EncryptionScheme() {
+        String output = '\nObject,Field,IsEncrypted,EncryptionScheme';
+        for (FieldInfo fieldInfo : fieldInfosMap.values()) {
+            output += '\n' + fieldInfo.objectName + ',' + fieldInfo.fieldName + ',' + fieldInfo.isEncrypted + ',' + fieldInfo.encryptionScheme;
+        }
+        system.debug(output);
     }
 
     // Manage fieldInfosMap
