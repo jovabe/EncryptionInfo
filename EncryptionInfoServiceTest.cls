@@ -33,7 +33,6 @@ private class EncryptionInfoServiceTest {
         Test.startTest();
         EncryptionInfoService encryptionInfoServ = new EncryptionInfoService();
         encryptionInfoServ.retrieveAllFields();
-        encryptionInfoServ.outputToDebugLog();
         Test.stopTest();
     }
 
@@ -42,6 +41,17 @@ private class EncryptionInfoServiceTest {
         Test.startTest();
         EncryptionInfoService encryptionInfoServ = new EncryptionInfoService();
         encryptionInfoServ.retrieveObjectFields('Account');
+        Test.stopTest();
+    }
+
+    @IsTest
+    private static void testOutputToDebugLog() {
+        Test.startTest();
+        EncryptionInfoService encryptionInfoServ = new EncryptionInfoService();
+        // Populate fieldInfosMap with dummy record
+        encryptionInfoServ.fieldInfosMap.put('Sea.Horse', new EncryptionInfoService.FieldInfo('Sea.Horse', 'Sea', 'Horse', true));
+        encryptionInfoServ.outputToDebugLog();
+        encryptionInfoServ.includeEncryptionScheme = true;
         encryptionInfoServ.outputToDebugLog();
         Test.stopTest();
     }
@@ -51,7 +61,6 @@ private class EncryptionInfoServiceTest {
         System.Test.setMock(WebServiceMock.class, new WebServiceMockImpl());
         Test.startTest();
         EncryptionInfoService encryptionInfoServ = new EncryptionInfoService();
-
         // Populate fieldInfosMap with dummy record
         encryptionInfoServ.fieldInfosMap.put('Sea.Horse', new EncryptionInfoService.FieldInfo('Sea.Horse', 'Sea', 'Horse', true));
 
