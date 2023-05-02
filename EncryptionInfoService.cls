@@ -71,7 +71,8 @@ public with sharing class EncryptionInfoService {
             batch.add(fieldInfo.fullName);
 
             if (batch.size() == 10) {
-                //MAX_BATCH_METADATA_SIZE
+                // Max batch size as documented here:
+                // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_readMetadata.htm
                 mdInfo.addAll((List<MetadataService.CustomField>) service.readMetadata('CustomField', batch).getRecords());
                 batch.clear();
             }
